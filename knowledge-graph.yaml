@@ -1,0 +1,266 @@
+# knowledge-graph.yaml — machine-readable node/edge graph (OKF bonus artifact)
+# Generated from each page's `related` frontmatter edges. See SCHEMA.md.
+okf_version: "0.1"
+generated: 2026-06-26
+node_count: 18
+nodes:
+  - id: artifacts
+    title: "Artifacts"
+    type: "Feature"
+    domain: capabilities
+    path: capabilities/artifacts.md
+    confidence: high
+  - id: capabilities-and-modes
+    title: "Model Capabilities & Modes"
+    type: "Model Reference"
+    domain: models
+    path: models/capabilities-and-modes.md
+    confidence: high
+  - id: claude-ai
+    title: "Claude.ai & the Claude Apps"
+    type: "Surface"
+    domain: platform
+    path: platform/claude-ai.md
+    confidence: high
+  - id: claude-code-overview
+    title: "Claude Code — Overview"
+    type: "Surface"
+    domain: platform
+    path: platform/claude-code.md
+    confidence: high
+  - id: claude-design
+    title: "Claude Design"
+    type: "Surface"
+    domain: platform
+    path: platform/claude-design.md
+    confidence: high
+  - id: cli-shortcuts
+    title: "Claude Code — CLI Flags & Keyboard Shortcuts"
+    type: "Command Reference"
+    domain: claude-code
+    path: claude-code/cli-and-shortcuts.md
+    confidence: high
+  - id: connectors
+    title: "Connectors"
+    type: "Extension System"
+    domain: capabilities
+    path: capabilities/connectors.md
+    confidence: high
+  - id: cowork
+    title: "Claude Cowork"
+    type: "Surface"
+    domain: platform
+    path: platform/cowork.md
+    confidence: high
+  - id: dispatch-remote
+    title: "Claude Code — Dispatch, Remote Control & Routines"
+    type: "Feature"
+    domain: claude-code
+    path: claude-code/dispatch-remote-routines.md
+    confidence: high
+  - id: hooks
+    title: "Claude Code — Hooks"
+    type: "Configuration Reference"
+    domain: claude-code
+    path: claude-code/hooks.md
+    confidence: high
+  - id: mcp
+    title: "Model Context Protocol (MCP)"
+    type: "Protocol"
+    domain: capabilities
+    path: capabilities/mcp.md
+    confidence: high
+  - id: model-families
+    title: "Claude Model Families"
+    type: "Model Reference"
+    domain: models
+    path: models/model-families.md
+    confidence: high
+  - id: plugins
+    title: "Claude Code Plugins"
+    type: "Extension System"
+    domain: capabilities
+    path: capabilities/plugins.md
+    confidence: high
+  - id: projects
+    title: "Projects"
+    type: "Feature"
+    domain: capabilities
+    path: capabilities/projects.md
+    confidence: high
+  - id: settings
+    title: "Claude Code — Settings"
+    type: "Configuration Reference"
+    domain: claude-code
+    path: claude-code/settings.md
+    confidence: high
+  - id: skills
+    title: "Agent Skills"
+    type: "Extension System"
+    domain: capabilities
+    path: capabilities/skills.md
+    confidence: high
+  - id: slash-commands
+    title: "Claude Code — Slash Commands"
+    type: "Command Reference"
+    domain: claude-code
+    path: claude-code/slash-commands.md
+    confidence: high
+  - id: subagents
+    title: "Claude Code — Subagents"
+    type: "Feature"
+    domain: claude-code
+    path: claude-code/subagents.md
+    confidence: high
+edges:
+  - {from: claude-ai, to: cowork, rel: related}
+  - {from: claude-ai, to: claude-code-overview, rel: related}
+  - {from: claude-ai, to: claude-design, rel: related}
+  - {from: claude-ai, to: model-families, rel: related}
+  - {from: claude-ai, to: capabilities-and-modes, rel: related}
+  - {from: claude-ai, to: artifacts, rel: related}
+  - {from: claude-ai, to: projects, rel: related}
+  - {from: claude-ai, to: skills, rel: related}
+  - {from: claude-ai, to: connectors, rel: related}
+  - {from: cowork, to: claude-ai, rel: related}
+  - {from: cowork, to: claude-code-overview, rel: related}
+  - {from: cowork, to: dispatch-remote, rel: related}
+  - {from: cowork, to: connectors, rel: related}
+  - {from: cowork, to: mcp, rel: related}
+  - {from: cowork, to: skills, rel: related}
+  - {from: claude-design, to: claude-code-overview, rel: related}
+  - {from: claude-design, to: artifacts, rel: related}
+  - {from: claude-design, to: claude-ai, rel: related}
+  - {from: claude-design, to: cowork, rel: related}
+  - {from: claude-design, to: capabilities-and-modes, rel: related}
+  - {from: claude-design, to: connectors, rel: related}
+  - {from: claude-design, to: mcp, rel: related}
+  - {from: claude-design, to: slash-commands, rel: related}
+  - {from: claude-design, to: dispatch-remote, rel: related}
+  - {from: claude-code-overview, to: claude-ai, rel: related}
+  - {from: claude-code-overview, to: model-families, rel: related}
+  - {from: claude-code-overview, to: capabilities-and-modes, rel: related}
+  - {from: claude-code-overview, to: slash-commands, rel: related}
+  - {from: claude-code-overview, to: settings, rel: related}
+  - {from: claude-code-overview, to: hooks, rel: related}
+  - {from: claude-code-overview, to: cli-shortcuts, rel: related}
+  - {from: claude-code-overview, to: subagents, rel: related}
+  - {from: claude-code-overview, to: dispatch-remote, rel: related}
+  - {from: claude-code-overview, to: skills, rel: related}
+  - {from: claude-code-overview, to: plugins, rel: related}
+  - {from: claude-code-overview, to: mcp, rel: related}
+  - {from: claude-code-overview, to: connectors, rel: related}
+  - {from: claude-code-overview, to: artifacts, rel: related}
+  - {from: model-families, to: capabilities-and-modes, rel: related}
+  - {from: model-families, to: claude-ai, rel: related}
+  - {from: model-families, to: claude-code-overview, rel: related}
+  - {from: model-families, to: projects, rel: related}
+  - {from: capabilities-and-modes, to: model-families, rel: related}
+  - {from: capabilities-and-modes, to: slash-commands, rel: related}
+  - {from: capabilities-and-modes, to: cli-shortcuts, rel: related}
+  - {from: capabilities-and-modes, to: mcp, rel: related}
+  - {from: capabilities-and-modes, to: connectors, rel: related}
+  - {from: capabilities-and-modes, to: skills, rel: related}
+  - {from: capabilities-and-modes, to: artifacts, rel: related}
+  - {from: capabilities-and-modes, to: claude-ai, rel: related}
+  - {from: capabilities-and-modes, to: settings, rel: related}
+  - {from: capabilities-and-modes, to: subagents, rel: related}
+  - {from: slash-commands, to: skills, rel: related}
+  - {from: slash-commands, to: settings, rel: related}
+  - {from: slash-commands, to: hooks, rel: related}
+  - {from: slash-commands, to: plugins, rel: related}
+  - {from: slash-commands, to: subagents, rel: related}
+  - {from: slash-commands, to: cli-shortcuts, rel: related}
+  - {from: slash-commands, to: capabilities-and-modes, rel: related}
+  - {from: slash-commands, to: mcp, rel: related}
+  - {from: settings, to: hooks, rel: related}
+  - {from: settings, to: slash-commands, rel: related}
+  - {from: settings, to: mcp, rel: related}
+  - {from: settings, to: subagents, rel: related}
+  - {from: settings, to: cli-shortcuts, rel: related}
+  - {from: settings, to: plugins, rel: related}
+  - {from: settings, to: connectors, rel: related}
+  - {from: settings, to: skills, rel: related}
+  - {from: settings, to: model-families, rel: related}
+  - {from: settings, to: capabilities-and-modes, rel: related}
+  - {from: hooks, to: settings, rel: related}
+  - {from: hooks, to: slash-commands, rel: related}
+  - {from: hooks, to: subagents, rel: related}
+  - {from: hooks, to: plugins, rel: related}
+  - {from: hooks, to: mcp, rel: related}
+  - {from: hooks, to: cli-shortcuts, rel: related}
+  - {from: subagents, to: slash-commands, rel: related}
+  - {from: subagents, to: settings, rel: related}
+  - {from: subagents, to: hooks, rel: related}
+  - {from: subagents, to: plugins, rel: related}
+  - {from: subagents, to: dispatch-remote, rel: related}
+  - {from: subagents, to: skills, rel: related}
+  - {from: subagents, to: cli-shortcuts, rel: related}
+  - {from: subagents, to: capabilities-and-modes, rel: related}
+  - {from: subagents, to: model-families, rel: related}
+  - {from: subagents, to: mcp, rel: related}
+  - {from: dispatch-remote, to: claude-code-overview, rel: related}
+  - {from: dispatch-remote, to: cli-shortcuts, rel: related}
+  - {from: dispatch-remote, to: cowork, rel: related}
+  - {from: dispatch-remote, to: connectors, rel: related}
+  - {from: dispatch-remote, to: slash-commands, rel: related}
+  - {from: dispatch-remote, to: settings, rel: related}
+  - {from: dispatch-remote, to: mcp, rel: related}
+  - {from: dispatch-remote, to: plugins, rel: related}
+  - {from: dispatch-remote, to: skills, rel: related}
+  - {from: dispatch-remote, to: model-families, rel: related}
+  - {from: artifacts, to: claude-ai, rel: related}
+  - {from: artifacts, to: projects, rel: related}
+  - {from: artifacts, to: claude-design, rel: related}
+  - {from: artifacts, to: claude-code-overview, rel: related}
+  - {from: artifacts, to: mcp, rel: related}
+  - {from: artifacts, to: connectors, rel: related}
+  - {from: artifacts, to: skills, rel: related}
+  - {from: artifacts, to: cowork, rel: related}
+  - {from: projects, to: claude-ai, rel: related}
+  - {from: projects, to: artifacts, rel: related}
+  - {from: projects, to: connectors, rel: related}
+  - {from: projects, to: skills, rel: related}
+  - {from: projects, to: capabilities-and-modes, rel: related}
+  - {from: projects, to: mcp, rel: related}
+  - {from: skills, to: plugins, rel: related}
+  - {from: skills, to: claude-code-overview, rel: related}
+  - {from: skills, to: connectors, rel: related}
+  - {from: skills, to: capabilities-and-modes, rel: related}
+  - {from: skills, to: mcp, rel: related}
+  - {from: skills, to: subagents, rel: related}
+  - {from: skills, to: projects, rel: related}
+  - {from: skills, to: slash-commands, rel: related}
+  - {from: connectors, to: mcp, rel: related}
+  - {from: connectors, to: claude-ai, rel: related}
+  - {from: connectors, to: cowork, rel: related}
+  - {from: connectors, to: projects, rel: related}
+  - {from: connectors, to: skills, rel: related}
+  - {from: connectors, to: plugins, rel: related}
+  - {from: connectors, to: claude-code-overview, rel: related}
+  - {from: mcp, to: connectors, rel: related}
+  - {from: mcp, to: settings, rel: related}
+  - {from: mcp, to: slash-commands, rel: related}
+  - {from: mcp, to: plugins, rel: related}
+  - {from: mcp, to: claude-code-overview, rel: related}
+  - {from: mcp, to: capabilities-and-modes, rel: related}
+  - {from: mcp, to: hooks, rel: related}
+  - {from: mcp, to: cli-shortcuts, rel: related}
+  - {from: mcp, to: skills, rel: related}
+  - {from: mcp, to: subagents, rel: related}
+  - {from: plugins, to: skills, rel: related}
+  - {from: plugins, to: subagents, rel: related}
+  - {from: plugins, to: hooks, rel: related}
+  - {from: plugins, to: slash-commands, rel: related}
+  - {from: plugins, to: mcp, rel: related}
+  - {from: plugins, to: settings, rel: related}
+  - {from: plugins, to: claude-code-overview, rel: related}
+  - {from: cli-shortcuts, to: claude-code-overview, rel: related}
+  - {from: cli-shortcuts, to: slash-commands, rel: related}
+  - {from: cli-shortcuts, to: settings, rel: related}
+  - {from: cli-shortcuts, to: hooks, rel: related}
+  - {from: cli-shortcuts, to: subagents, rel: related}
+  - {from: cli-shortcuts, to: dispatch-remote, rel: related}
+# Dangling references — targets not yet their own page (markers for future work, per OKF):
+future_pages:
+  - memory
