@@ -25,7 +25,7 @@ This is not a single document. It is a small graph of plain-markdown pages with 
 
 ---
 
-## The four domains
+## The domains
 
 | Domain | What lives here | Index |
 |---|---|---|
@@ -33,6 +33,7 @@ This is not a single document. It is a small graph of plain-markdown pages with 
 | 🧠 **Models** | The engines: families, IDs, pricing, capabilities | [models/](./models/index.md) |
 | ⌨️ **Claude Code** | Deep reference for the agentic coding tool | [claude-code/](./claude-code/index.md) |
 | 🧩 **Capabilities** | Cross-surface features & extension systems | [capabilities/](./capabilities/index.md) |
+| 📺 **Learning resources** | Curated external videos & courses about Claude — with publish dates, built to be swap-automatable | [resources/](./resources/index.md) |
 
 ---
 
@@ -72,6 +73,11 @@ This is not a single document. It is a small graph of plain-markdown pages with 
 | [Model Context Protocol (MCP)](./capabilities/mcp.md) | The open standard underneath connectors: architecture, transports, primitives, Claude Code config (`claude mcp add`, scopes, `.mcp.json`), OAuth, and security. |
 | [Plugins](./capabilities/plugins.md) | Shareable bundles of commands/subagents/hooks/MCP/skills; the manifest, marketplaces, `/plugin`, install scopes, and enterprise controls. |
 
+### 📺 Learning resources — *watch & learn*
+| Page | What it covers |
+|---|---|
+| [Learning Resources](./resources/index.md) | Curated external Claude tutorials, talks, and courses (from the training catalog) — each with creator, **YouTube publish date**, and a link to the wiki page it supports. Backed by a machine-readable [`claude-video-resources.yaml`](./resources/claude-video-resources.yaml) so stale videos can be **swapped automatically** when better ones appear. |
+
 ---
 
 ## How this library is organized (the OKF model)
@@ -104,7 +110,7 @@ To rebuild the glossary and knowledge graph after editing pages, re-run the extr
 
 ## Library stats (2026-06-26)
 
-- **18 content pages** across 4 domains + 4 meta files (this index, SCHEMA, glossary, knowledge-graph, log)
+- **18 reference pages** across 4 domains, plus a curated **[Learning Resources](./resources/index.md)** index (15 Claude videos/courses, swap-automatable) and 5 meta files (this index, SCHEMA, glossary, knowledge-graph, log)
 - **~9,000+ lines** of example-rich documentation
 - **~218 glossary terms**
 - Built by a multi-agent OKF workflow: **draft → adversarial verify → completeness audit → targeted enrichment**

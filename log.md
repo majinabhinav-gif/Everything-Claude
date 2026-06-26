@@ -47,6 +47,18 @@ Created the library from scratch as an OKF v0.1 wiki via a multi-agent pipeline.
 
 ---
 
+## 2026-06-26 — Learning Resources added
+
+Added a curated **[Learning Resources](./resources/index.md)** index (new `resources/` domain) from the user's training catalog (`Book1.xlsx` → *Course List*).
+
+- Extracted the 15 Claude/Anthropic-tagged rows, pulling the **real hyperlink targets from column C** (cell hyperlinks, not display text) via openpyxl.
+- For every YouTube video, scraped the **`uploadDate`** + canonical title/channel from the watch page so entries are **swap-automatable**: 13 videos + 1 playlist + 1 official tutorials page, all dated.
+- Emitted a machine-readable companion **[`resources/claude-video-resources.yaml`](./resources/claude-video-resources.yaml)** (`youtube_id`, `published`, `topic`, `maps_to`, `status`, `swap_policy`, `last_verified`) plus a refresh recipe so a future agent can detect newer/better videos and swap them, bumping `last_verified` and logging the change here.
+- Each resource is cross-linked to the wiki page it supports (e.g. *Claude Cowork* video → [platform/cowork.md](./platform/cowork.md)).
+- Fixed two mojibake titles (em/en-dashes corrupted by a unicode-decode step in scraping).
+
+---
+
 ## Tracked gaps / backlog (open work)
 
 Honest list of what's still thin or unverified, for the next refresh pass. None block use; all are flagged inline on their pages with **⚠️ verify** / in *Open questions*.

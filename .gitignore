@@ -1,0 +1,10 @@
+# Obsidian — machine-specific session/UI state (the rest of .obsidian/ is shared
+# so the graph view works for anyone who clones)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
