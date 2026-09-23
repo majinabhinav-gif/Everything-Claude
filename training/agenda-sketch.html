@@ -1,0 +1,658 @@
+<title>Project Coordination Agenda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@400;700&family=Yomogi&display=swap">
+<style>
+:root{--paper:#FCFBF6;--ink:#23262D;--muted:#6B7080;color-scheme:light}
+html,body{height:100%;margin:0;background:var(--paper)}
+body{overflow:hidden;font-family:Kalam,"Comic Sans MS",cursive;color:var(--ink)}
+#wrap{position:fixed;inset:0;padding-inline:16px;background:var(--paper)}
+#world{width:100%;height:100%;display:block}
+#pencil{transition:opacity .18s}
+.loading{position:fixed;inset:0;display:grid;place-items:center;font:28px Caveat,Kalam,cursive;color:var(--muted);pointer-events:none}
+.ctl{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) rotate(-.6deg);
+  display:flex;gap:2px;align-items:center;background:rgba(252,251,246,.94);border:2px solid var(--ink);
+  border-radius:255px 18px 225px 18px/18px 225px 18px 255px;padding:4px 10px;transition:opacity .4s;z-index:3;max-width:calc(100vw - 32px);box-sizing:border-box}
+.ctl.idle{opacity:0}
+.ctl button{all:unset;cursor:pointer;font:700 17px/1 Kalam,cursive;padding:8px 10px;border-radius:10px;white-space:nowrap}
+.ctl button:hover{background:#FFE58A}
+.ctl button:focus-visible{outline:2px dashed var(--ink);outline-offset:2px}
+.ctl .lbl{font:17px Caveat,cursive;color:var(--muted);padding:0 8px;white-space:nowrap;min-width:92px;text-align:center}
+@media (max-width:520px){.ctl .lbl{display:none}}
+</style>
+
+<div id="wrap"><svg id="world" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet" aria-label="Hand-drawn animation of the AI for Project Coordination training agenda">
+  <defs id="defs">
+    <pattern id="grid" width="160" height="160" patternUnits="userSpaceOnUse">
+      <path d="M32 0V160M64 0V160M96 0V160M128 0V160M0 32H160M0 64H160M0 96H160M0 128H160" stroke="#E3EBF5" stroke-width="1" fill="none"/>
+      <path d="M0 0V160M0 0H160" stroke="#CFDCEE" stroke-width="1.3" fill="none"/>
+    </pattern>
+  </defs>
+  <rect x="-3000" y="-3000" width="12000" height="9000" fill="url(#grid)"/>
+  <g id="links"></g>
+  <g id="ink"></g>
+  <g id="pencil" opacity="0"></g>
+</svg></div>
+<div class="loading" id="loading">sharpening pencils…</div>
+
+<div class="ctl" id="ctl" aria-label="Playback controls">
+  <button id="bPrev" aria-label="Previous scene" title="Previous (←)">◂ back</button>
+  <button id="bPlay" aria-label="Pause" title="Pause (Space)">pause</button>
+  <button id="bNext" aria-label="Next scene" title="Next (→)">next ▸</button>
+  <span class="lbl" id="lbl">intro</span>
+  <button id="bRestart" aria-label="Restart" title="Restart (R)">↺</button>
+  <button id="bFull" aria-label="Fullscreen" title="Fullscreen (F)">⤢</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+<script>
+(async () => {
+const INK = "#23262D", MUTED = "#6B7080", BLUE = "#2F5BD3", CORAL = "#E4553F", GREEN = "#23945F",
+      YELLOW = "#FFD23F", PALEY = "#FFE58A", PAPER = "#FCFBF6";
+const HAND = "Caveat, Kalam, 'Comic Sans MS', cursive";
+const BODY = "Kalam, Yomogi, 'Comic Sans MS', cursive";
+const JP = "Yomogi, Kalam, cursive";
+const NS = "http://www.w3.org/2000/svg";
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const BOIL_FPS = 7, PAN = 1.0, ZOOM = REDUCED ? 0 : 0.38;
+
+const svg = document.getElementById("world"), defs = document.getElementById("defs");
+const inkG = document.getElementById("ink"), linkG = document.getElementById("links"), penG = document.getElementById("pencil");
+const R = rough.svg(svg);
+const BASE = { roughness: 1.35, bowing: 1.2, stroke: INK, strokeWidth: 2.3, fillWeight: 1.6, hachureGap: 7 };
+
+try {
+  await Promise.all([
+    document.fonts.load("700 60px Caveat"), document.fonts.load("400 28px Kalam", "Hello नमस्ते"),
+    document.fonts.load("700 28px Kalam"), document.fonts.load("28px Yomogi", "月曜日"),
+  ]);
+} catch (_) {}
+
+/* ---------------- helpers ---------------- */
+function S(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const rnd = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const ease = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const rr = (x, y, w, h, r) => `M${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h - r} Q${x + w},${y + h} ${x + w - r},${y + h} H${x + r} Q${x},${y + h} ${x},${y + h - r} V${y + r} Q${x},${y} ${x + r},${y} Z`;
+const bubble = (x, y, w, h) => rr(x, y, w, h, 22) + ` M${x + 46},${y + h} L${x + 30},${y + h + 34} L${x + 84},${y + h}`;
+const sparkle = (cx, cy, r) => `M${cx},${cy - r} Q${cx},${cy} ${cx + r},${cy} Q${cx},${cy} ${cx},${cy + r} Q${cx},${cy} ${cx - r},${cy} Q${cx},${cy} ${cx},${cy - r} Z`;
+const qpt = (g, u) => ({ x: (1 - u) * (1 - u) * g.x1 + 2 * (1 - u) * u * g.cx + u * u * g.x2, y: (1 - u) * (1 - u) * g.y1 + 2 * (1 - u) * u * g.cy + u * u * g.y2 });
+
+let uid = 0, seedN = 1;
+const E = [];            // every animated element
+const SC = [];           // scenes
+
+/* ---------------- world layout: a snake across one big sheet ---------------- */
+const COLS = 4, GX = 1480, GY = 940;
+function framePos(i) { const r = Math.floor(i / COLS); let c = i % COLS; if (r % 2) c = COLS - 1 - c; return { x: c * GX, y: r * GY }; }
+
+/* ---------------- element builders ---------------- */
+function ctx(si, start, parent, ox, oy) {
+  const c = {
+    rough(t, d, gen, ro = {}, o = {}) {
+      const root = S("g", {}, o.parent || parent);
+      if (o.rot) root.setAttribute("transform", `rotate(${o.rot} ${o.cx || 0} ${o.cy || 0})`);
+      const seed0 = (seedN += 7);
+      const vars = [0, 1, 2].map(k => {
+        const g = gen({ ...BASE, ...ro, seed: seed0 + k * 101 });
+        root.appendChild(g);
+        return { g, paths: [...g.querySelectorAll("path")].map(el => ({ el })), last: -1 };
+      });
+      const e = { kind: "rough", s: si, t0: start + t, d, root, vars, ro, ox, oy, pen: o.pen !== false };
+      E.push(e); return e;
+    },
+    rect: (x, y, w, h, t, d, ro, o = {}) => c.rough(t, d, op => R.rectangle(x, y, w, h, op), ro, { ...o, cx: x + w / 2, cy: y + h / 2 }),
+    ell: (cx, cy, w, h, t, d, ro, o = {}) => c.rough(t, d, op => R.ellipse(cx, cy, w, h, op), ro, { ...o, cx, cy }),
+    line: (x1, y1, x2, y2, t, d, ro, o) => c.rough(t, d, op => R.line(x1, y1, x2, y2, op), ro, o),
+    path: (dd, t, d, ro, o) => c.rough(t, d, op => R.path(dd, op), ro, o),
+    arrow(x1, y1, x2, y2, t, d, o = {}) {
+      const b = o.bend || 0, mx = (x1 + x2) / 2, my = (y1 + y2) / 2, L = Math.hypot(x2 - x1, y2 - y1) || 1;
+      const cx = mx - (y2 - y1) / L * b, cy = my + (x2 - x1) / L * b;
+      const a = Math.atan2(y2 - cy, x2 - cx), hs = o.head || 18;
+      const h1 = [x2 - hs * Math.cos(a - .45), y2 - hs * Math.sin(a - .45)], h2 = [x2 - hs * Math.cos(a + .45), y2 - hs * Math.sin(a + .45)];
+      const e = c.path(`M${x1},${y1} Q${cx},${cy} ${x2},${y2} M${h1} L${x2},${y2} L${h2}`, t, d, { stroke: o.color || INK, strokeWidth: o.w || 2.3, roughness: 1.1 });
+      e.geo = { x1, y1, cx, cy, x2, y2 };
+      return e;
+    },
+    text(x, y, str, t, d, o = {}) {
+      const size = o.size || 28;
+      const el = S("text", { x, y, "font-family": o.font || BODY, "font-size": size, fill: o.color || INK,
+        "text-anchor": o.anchor || "start", "font-weight": o.weight || 400 }, o.parent || parent);
+      if (o.spacing) el.setAttribute("letter-spacing", o.spacing);
+      el.textContent = o.measure || str;
+      const bb = el.getBBox();
+      el.textContent = str;
+      const cp = S("clipPath", { id: "c" + (++uid) }, defs);
+      const clip = S("rect", { x: bb.x - 8, y: bb.y - 14, height: bb.height + 28, width: 0 }, cp);
+      el.setAttribute("clip-path", `url(#${cp.id})`);
+      if (d == null) d = Math.max(.25, str.length * (size > 50 ? .04 : .021));
+      const e = { kind: "text", s: si, t0: start + t, d, root: el, el, clip, bb, x, y, size, rot: o.rot || 0, id: ++uid, ox, oy, pen: o.pen !== false, lk: -1 };
+      E.push(e); e.end = t + d; return e;
+    },
+    lines(x, y, arr, t, o = {}) {
+      const lh = o.lh || (o.size || 28) * 1.45; let tt = t; const out = [];
+      arr.forEach((s, i) => { const e = c.text(x, y + i * lh, s, tt, null, o); out.push(e); tt = e.end + .06; });
+      out.end = tt; return out;
+    },
+    hl(x, y, w, h, t, d, under) {
+      const p = S("path", { d: `M${x},${y + h / 2} Q${x + w / 2},${y + h / 2 + 4} ${x + w},${y + h / 2 - 2}`, stroke: "rgba(255,210,63,.62)",
+        "stroke-width": h, "stroke-linecap": "round", fill: "none" });
+      (under ? under.el.parentNode : parent).insertBefore(p, under ? under.el : null);
+      const e = { kind: "hl", s: si, t0: start + t, d, root: p, el: p, ox, oy, pen: false };
+      E.push(e); return e;
+    },
+    check: (x, y, s, t, d, color = GREEN, w = 3.5) => c.path(`M${x},${y} L${x + s * .35},${y + s * .38} L${x + s},${y - s * .5}`, t, d, { stroke: color, strokeWidth: w, roughness: .9 }),
+    spark: (cx, cy, r, t, d, color = CORAL, fill) => c.path(sparkle(cx, cy, r), t, d, fill ? { stroke: color, fill, fillStyle: "solid" } : { stroke: color }),
+    custom(t, d, fn) { const e = { kind: "custom", s: si, t0: start + t, d, fn }; E.push(e); return e; },
+    header(tag, title, sub, t = 1.0) {
+      const tw = tag.length * 14 + 40;
+      c.path(rr(70, 50, tw, 40, 19), t, .35, { stroke: CORAL, strokeWidth: 2, roughness: 1 });
+      c.text(70 + tw / 2, 78, tag, t + .1, .3, { size: 19, color: CORAL, anchor: "middle", weight: 700, spacing: 2.5 });
+      const ti = c.text(70, 160, title, t + .35, null, { font: HAND, size: 76, weight: 700 });
+      const w = ti.bb.width;
+      let dd = `M72,178`; for (let k = 1; k <= 8; k++) dd += ` Q${72 + w * (k - .5) / 8},${178 + (k % 2 ? 7 : -7)} ${72 + w * k / 8},178`;
+      c.path(dd, ti.end + .05, .35, { stroke: BLUE, strokeWidth: 2.2, roughness: .6 }, { pen: false });
+      const su = c.text(74, 222, sub, ti.end + .2, null, { size: 26, color: MUTED });
+      return su.end + .1;
+    },
+  };
+  return c;
+}
+
+/* ---------------- scenes ---------------- */
+const TIERS = ["intro", "the plan", "segment 1", "segment 2", "segment 3", "3a", "3b", "3c", "3d", "let's go"];
+
+/* scenes are built on local time; their lengths come from their own content afterwards */
+TIERS.forEach((_, i) => { const pos = framePos(i); SC.push({ i, start: 0, pos, g: S("g", { transform: `translate(${pos.x},${pos.y})` }, inkG) }); });
+const C = i => ctx(i, 0, SC[i].g, SC[i].pos.x, SC[i].pos.y);
+
+/* links between frames, drawn during each camera move */
+for (let i = 1; i < SC.length; i++) {
+  const a = SC[i - 1].pos, b = SC[i].pos, lc = ctx(i, 0, linkG, 0, 0);
+  if (a.y === b.y) {
+    const dir = b.x > a.x ? 1 : -1, y = a.y + 360 + (i % 2 ? -30 : 30);
+    const x1 = dir > 0 ? a.x + 1280 + 30 : a.x - 30, x2 = dir > 0 ? b.x - 30 : b.x + 1280 + 30;
+    lc.arrow(x1, y, x2, y, .05, .6, { bend: 40 * dir, color: BLUE, w: 3, head: 24 });
+  } else {
+    lc.arrow(a.x + 640, a.y + 750, b.x + 640, b.y - 30, .05, .6, { bend: 50, color: BLUE, w: 3, head: 24 });
+  }
+}
+
+/* small doodle kit */
+const env = (x, y, w, h) => `M${x},${y} H${x + w} V${y + h} H${x} Z M${x},${y} L${x + w / 2},${y + h * .58} L${x + w},${y}`;
+const db = (x, y, w, H, e = 10) => `M${x},${y} a${w / 2},${e} 0 1,0 ${w},0 a${w / 2},${e} 0 1,0 ${-w},0 M${x},${y} L${x},${y + H} M${x + w},${y} L${x + w},${y + H} M${x},${y + H} a${w / 2},${e} 0 0,0 ${w},0`;
+const globe = (cx, cy, r) => `M${cx - r},${cy} a${r},${r} 0 1,0 ${2 * r},0 a${r},${r} 0 1,0 ${-2 * r},0 M${cx},${cy - r} a${r * .45},${r} 0 1,0 0.1,0 M${cx - r},${cy} L${cx + r},${cy} M${cx - r * .85},${cy - r * .5} L${cx + r * .85},${cy - r * .5} M${cx - r * .85},${cy + r * .5} L${cx + r * .85},${cy + r * .5}`;
+const lines = (x, y, w, n, gap = 16) => { let d = ""; for (let k = 0; k < n; k++) d += `M${x},${y + k * gap} L${x + w * (k === n - 1 ? .6 : 1)},${y + k * gap} `; return d; };
+const pill = (c, x, y, w, label, t, color = INK, size = 26) => {
+  c.path(rr(x, y, w, 50, 24), t, .3, { stroke: color, strokeWidth: 2, roughness: 1 });
+  return c.text(x + w / 2, y + 34, label, t + .15, .3, { size, anchor: "middle", color, weight: 700 });
+};
+
+/* 0 — title */
+{ const c = C(0);
+  c.text(104, 128, "Rohan Builders · Tuesday training", .2, .7, { size: 26, color: CORAL, weight: 700 });
+  c.text(100, 258, "AI for", .6, .5, { font: HAND, size: 124, weight: 700 });
+  const a = c.text(100, 388, "Project ", 1.2, .5, { font: HAND, size: 116, weight: 700 });
+  const b = c.text(a.bb.x + a.bb.width + 10, 388, "Coordination", 1.7, .8, { font: HAND, size: 116, weight: 700, color: BLUE });
+  c.hl(b.bb.x - 4, 336, b.bb.width + 8, 50, 2.6, .5, b);
+  c.text(104, 462, "for the people who plan, track & keep projects moving", 3.0, null, { size: 29, color: MUTED });
+  /* tower crane lifting a spark of AI */
+  c.path("M1120,640 L1120,165 M1148,640 L1148,165 M1120,640 L1148,600 L1120,560 L1148,520 L1120,480 L1148,440 L1120,400 L1148,360 L1120,320 L1148,280 L1120,240 L1148,200 L1120,165", .9, .8, { strokeWidth: 2 });
+  c.path("M990,165 L1250,165 M990,165 L1134,120 L1250,165 M1134,120 L1134,165", 1.6, .5, { strokeWidth: 2.2 });
+  c.rect(1100, 170, 48, 36, 2.0, .25, { fill: YELLOW, fillStyle: "hachure", hachureGap: 5 });
+  c.rect(1224, 168, 26, 30, 2.1, .2, { fill: "#C9CCD3", fillStyle: "solid" }, { pen: false });
+  c.rect(1080, 640, 108, 18, 2.2, .2, { fill: "#C9CCD3", fillStyle: "hachure", hachureGap: 5 });
+  c.line(1010, 168, 1010, 238, 2.4, .3, { strokeWidth: 1.6 });
+  c.path("M1002,238 L1018,238 L1010,252 Z", 2.6, .15, {}, { pen: false });
+  c.spark(1010, 282, 26, 2.8, .35, CORAL, YELLOW);
+  /* at-a-glance chips */
+  const ch = [[100, 230, "~90 minutes"], [348, 210, "3 segments"], [576, 390, "Copilot · Claude · ChatGPT"]];
+  ch.forEach(([x, w, s], k) => pill(c, x, 540, w, s, 4.3 + k * .5, k === 2 ? BLUE : INK, 26));
+}
+
+/* 1 — the plan: a road with three stops */
+{ const c = C(1); const t = c.header("THE PLAN", "Today's route", "about 90 minutes, three stops");
+  const road = dy => `M70,${420 + dy} Q145,${392 + dy} 220,${415 + dy} T560,${418 + dy} T900,${420 + dy} T1195,${410 + dy}`;
+  c.path(road(-16), t, 1.0, { strokeWidth: 2.4, roughness: .9 });
+  c.path(road(16), t + .15, 1.0, { strokeWidth: 2.4, roughness: .9 }, { pen: false });
+  c.path(road(0), t + .5, .9, { stroke: YELLOW, strokeWidth: 3, roughness: .6 }, { pen: false });
+  c.path("M1150,110 a44,44 0 1,0 88,0 a44,44 0 1,0 -88,0 M1194,110 L1194,82 M1194,110 L1214,122", t, .5, { strokeWidth: 2.4 });
+  c.text(1134, 124, "~90 min", t + .4, .4, { font: HAND, size: 42, weight: 700, anchor: "end" });
+  const STOPS = [[220, 415, "Capability", "spectrum", "10 min · a quick video"], [560, 418, "Vocabulary", "untangling", "10 min · brain & tool"],
+                 [900, 420, "Hands-on", "core skills", "the bulk of the session"]];
+  STOPS.forEach(([x, y, l1, l2, sub], k) => {
+    const tt = t + 1.1 + k * 1.1;
+    c.ell(x, y, 62, 62, tt, .3, { stroke: CORAL, strokeWidth: 2.8, fill: "#FFFFFF", fillStyle: "solid" });
+    c.text(x, y + 14, String(k + 1), tt + .2, .15, { font: HAND, size: 42, weight: 700, anchor: "middle", color: CORAL, pen: false });
+    c.text(x, 500, l1, tt + .3, .35, { font: HAND, size: 40, weight: 700, anchor: "middle" });
+    c.text(x, 538, l2, tt + .55, .35, { font: HAND, size: 40, weight: 700, anchor: "middle" });
+    c.text(x, 574, sub, tt + .8, .4, { size: 21, anchor: "middle", color: MUTED });
+  });
+  const SUB = [["3a", "writing"], ["3b", "technical"], ["3c", "Excel"], ["3d", "slides"]];
+  let x = 690; SUB.forEach(([code, s], k) => {
+    const w = s.length * 10 + 58, tt = t + 4.2 + k * .2;
+    c.path(rr(x, 600, w, 40, 18), tt, .22, { stroke: BLUE, strokeWidth: 1.8, roughness: .9 });
+    c.text(x + 14, 627, code, tt + .1, .12, { size: 19, color: CORAL, weight: 700, pen: false });
+    c.text(x + 46, 627, s, tt + .12, .2, { size: 19, color: BLUE, weight: 700, pen: false });
+    x += w + 10;
+  });
+  c.line(1195, 410, 1195, 292, t + 5.2, .3, { strokeWidth: 2.6 });
+  c.path("M1195,292 L1250,310 L1195,330 Z", t + 5.45, .3, { stroke: CORAL, fill: CORAL, fillStyle: "hachure", hachureGap: 5 });
+}
+
+/* 2 — segment 1: the capability spectrum */
+{ const c = C(2); const t = c.header("SEGMENT 1 · 10 MIN", "The capability spectrum", "simple to seriously powerful · watch, no hands-on");
+  c.arrow(90, 470, 1210, 470, t, .9, { w: 3, head: 22 });
+  c.text(90, 650, "simple", t + .6, .3, { font: HAND, size: 40, weight: 700, color: BLUE });
+  c.text(1205, 650, "complex", t + .8, .3, { font: HAND, size: 40, weight: 700, color: CORAL, anchor: "end" });
+  const IT = [["Draft an", "email"], ["Read a", "legal doc"], ["Explain a", "tech concept"], ["Build a", "dashboard"], ["Work in", "Excel"],
+              ["Make a", "PPT"], ["Automate a", "workflow"], ["A 'temporary", "employee'"], ["Create", "videos"], ["Build apps", "& software"]];
+  const col = k => { const u = k / 9, a = [47, 91, 211], b = [228, 85, 63]; return `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * u)).join(",")})`; };
+  IT.forEach(([l1, l2], k) => {
+    const x = 130 + k * 115, up = k % 2 === 0, s = 14 + k * 2.2, tt = t + 1.0 + k * .42;
+    c.ell(x, 470, s, s, tt, .15, { stroke: col(k), fill: col(k), fillStyle: "solid" }, { pen: false });
+    c.line(x, up ? 440 : 482, x, up ? 458 : 500, tt, .1, { strokeWidth: 1.6, stroke: MUTED }, { pen: false });
+    c.text(x, up ? 396 : 528, l1, tt + .05, .2, { size: 20, anchor: "middle" });
+    c.text(x, up ? 422 : 553, l2, tt + .15, .2, { size: 20, anchor: "middle", weight: 700 });
+  });
+}
+
+/* 3 — segment 2: vocabulary untangling */
+{ const c = C(3); const t = c.header("SEGMENT 2 · 10 MIN", "Model? Tool? Agent? Workflow?", "the words everyone mixes up, untangled");
+  let d = "M330,440"; for (let k = 1; k < 34; k++) {
+    const a = k * 1.9, r = 70 + rnd(k) * 80, x = 330 + Math.cos(a) * r * 1.35, y = 450 + Math.sin(a) * r * .8;
+    const cxp = 330 + Math.cos(a - .9) * (r + 40) * 1.35, cyp = 450 + Math.sin(a - .9) * (r + 40) * .8;
+    d += ` Q${cxp.toFixed(1)},${cyp.toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`;
+  }
+  c.path(d, t, 1.4, { stroke: MUTED, strokeWidth: 1.4, roughness: .7 });
+  [["model", 190, 360, -8], ["tool", 430, 350, 10], ["agent", 180, 540, 6], ["workflow", 390, 560, -6], ["GPT-5", 330, 470, 3], ["ChatGPT", 175, 455, -8]]
+    .forEach(([w, x, y, r], k) => c.text(x, y, w, t + .5 + k * .2, .3, { font: HAND, size: 38, weight: 700, rot: r, color: k % 2 ? CORAL : BLUE }));
+  c.arrow(560, 450, 660, 450, t + 2.0, .35, { w: 3, head: 22, color: BLUE });
+  c.text(610, 425, "untangle", t + 2.2, .35, { size: 20, anchor: "middle", color: BLUE });
+  /* brain */
+  c.ell(800, 420, 200, 150, t + 2.5, .55, { fill: "#F4B3A8", fillStyle: "hachure", hachureGap: 8 });
+  c.path("M800,350 Q790,420 800,492 M735,380 Q765,395 745,420 Q725,440 755,460 M865,380 Q835,395 855,420 Q875,440 845,460", t + 2.9, .5, { strokeWidth: 1.8 }, { pen: false });
+  c.text(800, 540, "the brain", t + 3.3, .4, { font: HAND, size: 42, weight: 700, anchor: "middle" });
+  c.text(800, 574, "what GPT-5 actually is", t + 3.7, .45, { size: 21, anchor: "middle", color: MUTED });
+  c.text(952, 432, "+", t + 3.9, .1, { font: HAND, size: 60, weight: 700, anchor: "middle", color: CORAL, pen: false });
+  /* toolbox */
+  c.path("M1050,372 L1050,346 L1120,346 L1120,372", t + 4.0, .3, { strokeWidth: 3 });
+  c.rect(1005, 372, 160, 96, t + 4.1, .45, { fill: "#9DB6F2", fillStyle: "hachure", hachureGap: 7 });
+  c.line(1005, 398, 1165, 398, t + 4.4, .2, {}, { pen: false });
+  c.path(globe(1040, 432, 18), t + 4.6, .3, { strokeWidth: 1.5, stroke: BLUE }, { pen: false });
+  c.path(db(1108, 420, 34, 26, 7), t + 4.7, .3, { strokeWidth: 1.5, stroke: BLUE }, { pen: false });
+  c.text(1085, 540, "the tools", t + 4.9, .4, { font: HAND, size: 42, weight: 700, anchor: "middle" });
+  c.text(1085, 574, "what the brain can use", t + 5.3, .45, { size: 21, anchor: "middle", color: MUTED });
+  let x = 640; ["model", "tool", "agent", "workflow"].forEach((w, k) => {
+    const pw = w.length * 12 + 56, tt = t + 5.9 + k * .25;
+    c.path(rr(x, 612, pw, 46, 22), tt, .22, { stroke: GREEN, strokeWidth: 2 });
+    c.check(x + 16, 636, 18, tt + .1, .12, GREEN, 2.6);
+    c.text(x + 44, 644, w, tt + .15, .2, { size: 22, weight: 700, color: GREEN, pen: false });
+    x += pw + 12;
+  });
+}
+
+/* 4 — segment 3 overview */
+{ const c = C(4); const t = c.header("SEGMENT 3 · HANDS-ON", "Core capabilities", "beginner-level text & document work");
+  const CARDS = [["3a", "Written", "communication"], ["3b", "Technical &", "domain know-how"], ["3c", "Excel", "sheets"], ["3d", "Presentations", ""]];
+  CARDS.forEach(([code, l1, l2], k) => {
+    const x = 80 + (k % 2) * 285, y = 268 + Math.floor(k / 2) * 180, tt = t + k * .35;
+    c.rect(x, y, 265, 160, tt, .35, { fill: "#FFFFFF", fillStyle: "solid" });
+    c.text(x + 22, y + 48, code, tt + .25, .2, { font: HAND, size: 42, weight: 700, color: CORAL });
+    c.text(x + 22, y + 96, l1, tt + .35, .3, { size: 26, weight: 700 });
+    if (l2) c.text(x + 22, y + 128, l2, tt + .5, .3, { size: 26, weight: 700 });
+    const ix = x + 190, iy = y + 22;
+    const icon = [env(ix, iy, 52, 36), `M${ix},${iy + 30} L${ix + 56},${iy + 30} M${ix + 4},${iy + 30} L${ix + 12},${iy + 44} L${ix + 20},${iy + 30} M${ix + 36},${iy + 30} L${ix + 44},${iy + 44} L${ix + 52},${iy + 30} M${ix + 12},${iy + 30} L${ix + 12},${iy + 16} M${ix + 28},${iy + 30} L${ix + 28},${iy + 8} M${ix + 44},${iy + 30} L${ix + 44},${iy + 16}`,
+                  `M${ix},${iy} H${ix + 54} V${iy + 42} H${ix} Z M${ix},${iy + 14} H${ix + 54} M${ix},${iy + 28} H${ix + 54} M${ix + 18},${iy} V${iy + 42} M${ix + 36},${iy} V${iy + 42}`,
+                  `M${ix},${iy} H${ix + 56} V${iy + 34} H${ix} Z M${ix + 28},${iy + 34} L${ix + 28},${iy + 46} M${ix + 10},${iy + 26} V${iy + 18} M${ix + 22},${iy + 26} V${iy + 10} M${ix + 34},${iy + 26} V${iy + 14}`][k];
+    c.path(icon, tt + .4, .35, { stroke: BLUE, strokeWidth: 1.8 }, { pen: false });
+  });
+  const T2 = t + 1.6;
+  c.text(700, 300, "every area, three steps:", T2, .6, { font: HAND, size: 42, weight: 700 });
+  const STEPS = [["live example", ""], ["case study", ""], ["which tool, how much effort,", "and what you need first"]];
+  STEPS.forEach(([a, b], k) => {
+    const y = 370 + k * 88, tt = T2 + .7 + k * .6;
+    c.ell(726, y - 9, 44, 44, tt, .25, { stroke: CORAL, strokeWidth: 2.2 });
+    c.text(726, y + 3, String(k + 1), tt + .1, .12, { font: HAND, size: 30, weight: 700, color: CORAL, anchor: "middle", pen: false });
+    c.text(766, y, a, tt + .15, .35, { size: 26 });
+    if (b) c.text(766, y + 32, b, tt + .45, .35, { size: 26 });
+    if (k < 2) c.line(726, y + 17, 726, y + 55, tt + .3, .15, { stroke: MUTED, strokeWidth: 1.5 }, { pen: false });
+  });
+  const nt = c.text(700, 650, "not today:", T2 + 3.0, .3, { size: 24, color: MUTED });
+  const na = c.text(nt.bb.x + nt.bb.width + 14, 650, "apps · workflows · agents", T2 + 3.3, .5, { size: 24, color: MUTED });
+  c.line(na.bb.x - 4, 642, na.bb.x + na.bb.width + 4, 640, T2 + 3.9, .35, { stroke: CORAL, strokeWidth: 3 });
+}
+
+/* 5 — 3a written communication */
+{ const c = C(5); const t = c.header("3a · WRITTEN", "Written communication", "the everyday writing that eats your week");
+  const W = [["Emails: draft, reply, fix the tone", env(84, 270, 48, 34)],
+             ["Meeting minutes (MOM)", `M84,266 H130 V310 H84 Z ${lines(92, 278, 30, 3, 10)}`],
+             ["Client & vendor letters", `M84,266 H130 V310 H84 Z M120,300 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0 ${lines(92, 278, 22, 2, 10)}`],
+             ["Site notes → progress reports", `M84,270 H130 V314 H84 Z M98,264 H116 V274 H98 Z ${lines(92, 286, 30, 3, 9)}`],
+             ["Internal memos & circulars", `M86,272 L118,262 L118,306 L86,296 Z M86,276 L78,276 L78,292 L86,292 M118,272 L128,270 M118,284 L130,284 M118,296 L128,298`]];
+  W.forEach(([s, ic], k) => {
+    const dy = k * 76, tt = t + k * .55;
+    c.path(ic, tt, .3, { stroke: BLUE, strokeWidth: 1.9 }, { pen: false, parent: S("g", { transform: `translate(0,${dy})` }, SC[5].g) });
+    c.text(150, 298 + dy, s, tt + .1, null, { size: 26 });
+  });
+  const T2 = t + 3.2;
+  c.text(700, 300, "the three dials:", T2, .5, { font: HAND, size: 44, weight: 700 });
+  const DIALS = [["tone", "formal ↔ warm", 40], ["style", "report ↔ chat", -30], ["length", "1 line ↔ 1 page", 60]];
+  DIALS.forEach(([name, hint, target], k) => {
+    const cx = 780 + k * 170, cy = 430, tt = T2 + .5 + k * .4;
+    c.ell(cx, cy, 124, 124, tt, .35, { fill: "#FFFFFF", fillStyle: "solid", strokeWidth: 2.6 });
+    let ticks = ""; for (let a = -120; a <= 120; a += 30) { const r = a * Math.PI / 180; ticks += `M${cx + Math.sin(r) * 70},${cy - Math.cos(r) * 70} L${cx + Math.sin(r) * 80},${cy - Math.cos(r) * 80} `; }
+    c.path(ticks, tt + .2, .25, { strokeWidth: 1.6, stroke: MUTED }, { pen: false });
+    const g = S("g", {}, SC[5].g);
+    c.path(`M${cx},${cy} L${cx},${cy - 46}`, tt + .35, .15, { stroke: CORAL, strokeWidth: 4.5, roughness: .6 }, { parent: g, pen: false });
+    c.ell(cx, cy, 16, 16, tt + .35, .1, { fill: INK, fillStyle: "solid" }, { parent: g, pen: false });
+    c.custom(T2 + 2.0 + k * .3, 1.1, p => {
+      const e = p < 1 ? ease(p) * (1 + .18 * Math.sin(p * Math.PI)) : 1;
+      g.setAttribute("transform", `rotate(${-100 + (target + 100) * e} ${cx} ${cy})`);
+    });
+    c.text(cx, 536, name, tt + .45, .3, { font: HAND, size: 40, weight: 700, anchor: "middle" });
+    c.text(cx, 568, hint, tt + .7, .4, { size: 19, anchor: "middle", color: MUTED });
+  });
+}
+
+/* 6 — 3b technical & domain */
+{ const c = C(6); const t = c.header("3b · TECHNICAL", "Technical & domain know-how", "legal documents, engineering concepts, the latest rules");
+  /* legal doc under a magnifier */
+  c.rect(104, 262, 160, 196, t, .35, { fill: "#FFFFFF", fillStyle: "solid" });
+  c.path(lines(122, 292, 124, 8, 19), t + .3, .45, { stroke: MUTED, strokeWidth: 1.4, roughness: .7 }, { pen: false });
+  c.hl(120, 342, 110, 14, t + .75, .3);
+  c.path("M250,408 m-34,0 a34,34 0 1,0 68,0 a34,34 0 1,0 -68,0 M275,433 L308,466", t + .9, .35, { strokeWidth: 3.4 });
+  c.text(184, 505, "review a legal doc", t + 1.2, null, { size: 23, anchor: "middle" });
+  /* simply supported beam with a load */
+  const T1 = t + 1.6;
+  c.rect(440, 372, 260, 22, T1, .35, { fill: "#C9CCD3", fillStyle: "hachure", hachureGap: 5 });
+  c.path("M452,394 L436,424 L468,424 Z M688,394 L672,424 L704,424 Z M430,432 L476,432 M666,432 L712,432", T1 + .3, .3, {});
+  [480, 530, 580, 630, 680].forEach((x, k) => c.arrow(x, 300, x, 368, T1 + .55 + k * .08, .15, { color: CORAL, w: 1.8, head: 10 }));
+  c.line(476, 300, 684, 300, T1 + .95, .2, { stroke: CORAL, strokeWidth: 1.8 }, { pen: false });
+  c.text(570, 505, "explain a civil concept", T1 + 1.1, null, { size: 23, anchor: "middle" });
+  /* globe: web search */
+  const T3 = t + 3.1;
+  c.path(globe(900, 362, 76), T3, .6, { stroke: BLUE, strokeWidth: 2.2 });
+  c.path("M960,420 m-24,0 a24,24 0 1,0 48,0 a24,24 0 1,0 -48,0 M978,438 L1000,460", T3 + .5, .3, { strokeWidth: 3 });
+  c.text(910, 505, "search new laws & rules", T3 + .7, null, { size: 23, anchor: "middle" });
+  /* core ideas */
+  const T4 = t + 4.4;
+  c.line(80, 540, 1200, 540, T4, .5, { stroke: MUTED, strokeWidth: 1.2, roughness: 1.6 }, { pen: false });
+  c.text(84, 596, "tool use", T4 + .3, .4, { font: HAND, size: 42, weight: 700 });
+  c.text(86, 634, "web search, custom databases…", T4 + .7, null, { size: 22, color: MUTED });
+  c.path(globe(420, 600, 24), T4 + 1.3, .3, { stroke: BLUE, strokeWidth: 1.8 }, { pen: false });
+  c.path(db(466, 586, 44, 34, 8), T4 + 1.4, .3, { stroke: BLUE, strokeWidth: 1.8 }, { pen: false });
+  const T5 = T4 + 1.6;
+  c.text(570, 596, "effort vs. model", T5, .5, { font: HAND, size: 42, weight: 700 });
+  c.text(572, 630, "quick job: light model, low effort", T5 + .4, null, { size: 20, color: BLUE });
+  c.text(572, 658, "tricky job: smart model, more effort", T5 + .8, null, { size: 20, color: CORAL });
+  const see = S("g", {}, SC[6].g);
+  c.path("M1060,648 L1038,690 L1082,690 Z", T5 + .5, .25, { fill: "#C9CCD3", fillStyle: "hachure", hachureGap: 5 });
+  c.line(950, 646, 1180, 646, T5 + .7, .25, { strokeWidth: 3 }, { parent: see });
+  c.rect(956, 624, 22, 22, T5 + .9, .15, { fill: "#9DB6F2", fillStyle: "solid" }, { parent: see, pen: false });
+  c.rect(1126, 596, 50, 50, T5 + 1.0, .2, { fill: CORAL, fillStyle: "hachure", hachureGap: 5 }, { parent: see, pen: false });
+  c.text(952, 606, "quick", T5 + 1.1, .3, { size: 19, color: BLUE, weight: 700, parent: see, pen: false });
+  c.text(1180, 584, "tricky", T5 + 1.2, .3, { size: 19, color: CORAL, weight: 700, anchor: "end", parent: see, pen: false });
+  c.custom(T5 + 1.3, .9, p => see.setAttribute("transform", `rotate(${8 * ease(p)} 1060 646)`));
+}
+
+/* 7 — 3c Excel */
+{ const c = C(7); const t = c.header("3c · EXCEL", "Excel, without the pain", "fix formulas, add plugins, go live, report");
+  c.rect(80, 262, 580, 44, t, .3, { fill: "#FFFFFF", fillStyle: "solid" });
+  c.text(96, 292, "fx", t + .2, .12, { size: 22, color: MUTED, weight: 700, pen: false });
+  const bad = c.text(136, 292, "=VLOOKUP(B3,Sheet2!A:C,4,0)", t + .35, .9, { size: 22, color: CORAL });
+  c.rect(80, 318, 580, 240, t + .5, .45, { fill: "#FFFFFF", fillStyle: "solid" });
+  c.path("M80,358 H660 M80,398 H660 M80,438 H660 M80,478 H660 M80,518 H660 M130,318 V558 M330,318 V558 M470,318 V558", t + .8, .5, { strokeWidth: 1.3, roughness: .7 }, { pen: false });
+  ["A", "B", "C"].forEach((h, k) => c.text([230, 400, 565][k], 346, h, t + 1.0, .1, { size: 20, color: MUTED, anchor: "middle", pen: false }));
+  const ROWS = [["Shree Steel", "PO-1182", "₹4,82,000"], ["Apex Cement", "PO-1190", "#REF!"], ["Deccan Tiles", "PO-1203", "₹1,16,500"], ["Om Electricals", "PO-1207", "₹72,300"]];
+  let badCell;
+  ROWS.forEach(([v, po, amt], k) => {
+    const y = 388 + k * 40, tt = t + 1.2 + k * .15;
+    c.text(106, y, String(k + 2), tt, .08, { size: 18, color: MUTED, anchor: "middle", pen: false });
+    c.text(142, y, v, tt, .25, { size: 21 });
+    c.text(342, y, po, tt + .05, .2, { size: 21, pen: false });
+    const cell = c.text(650, y, amt, tt + .1, .2, { size: 21, anchor: "end", color: k === 1 ? CORAL : INK, weight: k === 1 ? 700 : 400, pen: false });
+    if (k === 1) badCell = cell;
+  });
+  const Tf = t + 2.5;
+  c.ell(592, 422, 110, 40, Tf, .35, { stroke: CORAL, strokeWidth: 2.4 });
+  const good = c.text(136, 292, "=XLOOKUP(B3,Sheet2!A:A,Sheet2!C:C)", Tf + .9, .9, { size: 22, color: GREEN, weight: 700 });
+  const goodCell = c.text(650, 428, "₹2,48,000", Tf + 1.9, .3, { size: 21, anchor: "end", color: GREEN, weight: 700 });
+  c.custom(Tf + .8, .01, p => { const off = p > 0; bad.el.style.opacity = off ? 0 : 1; badCell.el.style.opacity = off ? 0 : 1; });
+  c.check(620, 305, 22, Tf + 1.9, .2, GREEN, 3);
+  /* autonomy slider */
+  c.text(84, 612, "autonomy:", Tf + 2.4, .3, { size: 22, color: MUTED });
+  c.text(200, 612, "you drive", Tf + 2.6, .3, { size: 20, color: BLUE, weight: 700 });
+  c.line(310, 606, 520, 606, Tf + 2.8, .3, { strokeWidth: 2.4 });
+  c.text(532, 612, "AI drives", Tf + 3.0, .3, { size: 20, color: CORAL, weight: 700 });
+  const knob = S("g", {}, SC[7].g);
+  c.ell(0, 0, 22, 22, Tf + 3.1, .1, { fill: YELLOW, fillStyle: "solid", strokeWidth: 2 }, { parent: knob, pen: false });
+  c.custom(Tf + 3.1, 1.0, p => knob.setAttribute("transform", `translate(${320 + 110 * ease(p)},606)`));
+  /* live analytics + plugins + reports */
+  const T2 = t + 3.0;
+  c.arrow(676, 410, 736, 410, T2, .3, { color: BLUE });
+  c.rect(750, 262, 440, 250, T2 + .2, .45, { fill: "#FFFFFF", fillStyle: "solid" });
+  c.text(772, 300, "live dashboard", T2 + .5, .4, { font: HAND, size: 36, weight: 700 });
+  c.ell(1160, 290, 12, 12, T2 + .6, .1, { fill: GREEN, fillStyle: "solid", stroke: GREEN }, { pen: false });
+  c.path("M780,480 L780,330 M780,480 L1160,480", T2 + .7, .35, { strokeWidth: 1.8 }, { pen: false });
+  c.path("M790,452 L850,430 L910,442 L970,398 L1030,410 L1090,362 L1150,350", T2 + 1.0, .7, { stroke: BLUE, strokeWidth: 3, roughness: .8 });
+  c.path("M790,470 L850,466 L910,458 L970,452 L1030,440 L1090,436 L1150,420", T2 + 1.3, .6, { stroke: CORAL, strokeWidth: 2, roughness: .8 }, { pen: false });
+  c.path("M768,560 h34 v26 h-34 z M776,560 v-12 M794,560 v-12 M785,586 v18 Q785,616 812,616", T2 + 2.0, .4, { strokeWidth: 2.2 });
+  c.text(826, 592, "plugins inside Excel", T2 + 2.3, null, { size: 24 });
+  c.path(`M1040,548 H1080 V600 H1040 Z ${lines(1048, 562, 24, 3, 10)}`, T2 + 2.7, .35, { strokeWidth: 2 });
+  c.text(1094, 580, "reports", T2 + 3.0, .35, { size: 24 });
+  c.text(1094, 604, "in one ask", T2 + 3.2, .35, { size: 18, color: MUTED });
+}
+
+/* 8 — 3d presentations */
+{ const c = C(8); const t = c.header("3d · PRESENTATIONS", "Decks that make the point", "from messy notes to a clear story");
+  c.rect(80, 290, 260, 280, t, .4, { fill: PALEY, fillStyle: "hachure", hachureGap: 10, fillWeight: 1.2 }, { rot: -3 });
+  c.path("M104,330 Q150,318 190,332 T290,326 M104,370 Q140,360 170,372 T250,366 M104,410 Q160,400 210,412 T310,404 M104,450 Q130,442 160,452 M104,490 Q150,480 190,494 T280,486 M104,530 Q140,522 180,532",
+    t + .35, .9, { strokeWidth: 1.8, roughness: 1.4 }, { pen: false });
+  c.line(200, 440, 300, 462, t + 1.1, .2, { stroke: CORAL, strokeWidth: 2.2 }, { pen: false });
+  c.text(210, 612, "messy notes", t + 1.3, .4, { font: HAND, size: 36, weight: 700, anchor: "middle" });
+  c.arrow(360, 430, 440, 430, t + 1.7, .3, { color: BLUE });
+  const OUT = ["1. Where we are", "2. What slipped", "3. Risks & asks", "4. Next 2 weeks"];
+  c.text(460, 316, "storyline", t + 2.0, .4, { font: HAND, size: 40, weight: 700, color: BLUE });
+  OUT.forEach((s, k) => c.text(462, 372 + k * 52, s, t + 2.4 + k * .35, null, { size: 25 }));
+  c.text(560, 612, "one idea per slide", t + 3.9, .5, { font: HAND, size: 32, weight: 700, color: BLUE, anchor: "middle" });
+  c.arrow(720, 430, 800, 430, t + 4.0, .3, { color: BLUE });
+  const T2 = t + 4.3;
+  [[820, 262], [900, 382], [980, 502]].forEach(([x, y], k) => {
+    const tt = T2 + k * .55;
+    c.rect(x, y, 230, 130, tt, .35, { fill: "#FFFFFF", fillStyle: "solid", strokeWidth: 2.4 });
+    c.line(x + 16, y + 26, x + 150, y + 26, tt + .2, .15, { strokeWidth: 3.2 }, { pen: false });
+    if (k === 0) c.path(`M${x + 20},${y + 110} V${y + 70} H${x + 50} V${y + 110} M${x + 64},${y + 110} V${y + 54} H${x + 94} V${y + 110} M${x + 108},${y + 110} V${y + 82} H${x + 138} V${y + 110}`, tt + .3, .3, { stroke: BLUE, fill: "#9DB6F2", fillStyle: "hachure", hachureGap: 5 }, { pen: false });
+    if (k === 1) c.path(lines(x + 18, y + 56, 150, 4, 16), tt + .3, .3, { stroke: MUTED, strokeWidth: 1.6 }, { pen: false });
+    if (k === 2) { c.ell(x + 60, y + 80, 70, 70, tt + .3, .3, { stroke: CORAL, fill: PALEY, fillStyle: "hachure", hachureGap: 5 }, { pen: false }); c.path(lines(x + 110, y + 64, 100, 3, 18), tt + .4, .25, { stroke: MUTED, strokeWidth: 1.6 }, { pen: false }); }
+  });
+  c.text(870, 690, "clear · on-brand · on time", T2 + 2.0, .7, { font: HAND, size: 34, weight: 700, color: CORAL, anchor: "middle", rot: -2 });
+}
+
+/* 9 — let's go */
+{ const c = C(9);
+  const CL = ["Capability spectrum", "Vocabulary untangling", "Hands-on: 3a–3d"];
+  CL.forEach((s, k) => {
+    const y = 150 + k * 62, tt = .4 + k * .5;
+    c.rect(100, y - 30, 34, 34, tt, .2, { strokeWidth: 2.2 });
+    c.text(152, y, s, tt + .1, .45, { font: HAND, size: 42, weight: 700 });
+    c.check(104, y - 14, 34, tt + .55, .2, GREEN, 3.6);
+  });
+  c.path("M960,290 Q960,160 1080,160 Q1200,160 1200,290 Z", 1.6, .6, { fill: YELLOW, fillStyle: "hachure", hachureGap: 6, strokeWidth: 2.6 });
+  c.ell(1080, 292, 300, 34, 2.1, .4, { fill: YELLOW, fillStyle: "solid", strokeWidth: 2.6 });
+  c.path("M1080,162 L1080,284 M1040,172 Q1030,230 1034,284 M1120,172 Q1130,230 1126,284", 2.4, .4, { strokeWidth: 1.8 }, { pen: false });
+  c.spark(1210, 150, 22, 2.8, .3, CORAL, YELLOW);
+  c.text(100, 450, "Bring your real work.", 3.0, .9, { font: HAND, size: 104, weight: 700 });
+  const a = c.text(100, 566, "Let's get ", 4.0, .5, { font: HAND, size: 104, weight: 700 });
+  const b = c.text(a.bb.x + a.bb.width + 10, 566, "building.", 4.5, .6, { font: HAND, size: 104, weight: 700, color: BLUE });
+  c.hl(b.bb.x - 6, 520, b.bb.width + 12, 44, 5.1, .4, b);
+  c.text(104, 650, "works with what you already use:", 5.6, .7, { size: 24, color: MUTED });
+  let x = 470; [["Copilot", 150], ["Claude", 140], ["ChatGPT", 160]].forEach(([s, w], k) => { pill(c, x, 618, w, s, 6.2 + k * .3, BLUE, 24); x += w + 14; });
+}
+
+/* ---------------- timeline: each scene lasts as long as its drawing, plus a beat ---------------- */
+const HOLD = 1.1;
+let acc = 0;
+SC.forEach(sc => {
+  const end = Math.max(...E.filter(e => e.s === sc.i).map(e => e.t0 + e.d));
+  sc.start = acc; sc.dur = end + HOLD; acc += sc.dur;
+});
+E.forEach(e => e.t0 += SC[e.s].start);
+const TOTAL = SC[SC.length - 1].start + SC[SC.length - 1].dur;
+
+/* ---------------- pencil ---------------- */
+const pencilVars = [0, 1, 2].map(k => {
+  const g = S("g", {}, penG), o = { ...BASE, seed: 900 + k * 13, roughness: 1, strokeWidth: 1.8 };
+  g.appendChild(R.path("M26,-10 L150,-10 L150,10 L26,10 Z", { ...o, fill: "#F4C430", fillStyle: "solid" }));
+  g.appendChild(R.path("M150,-10 L168,-10 L168,10 L150,10 Z", { ...o, fill: "#C9CCD3", fillStyle: "solid" }));
+  g.appendChild(R.path("M168,-10 L184,-10 Q190,0 184,10 L168,10 Z", { ...o, fill: "#F29A9A", fillStyle: "solid" }));
+  g.appendChild(R.path("M0,0 L26,-10 L26,10 Z", { ...o, fill: "#EBCB9B", fillStyle: "solid" }));
+  g.appendChild(R.path("M0,0 L9,-3.5 L9,3.5 Z", { ...o, fill: INK, fillStyle: "solid" }));
+  g.appendChild(R.line(30, 0, 148, 0, { ...o, stroke: "#C99A1E", strokeWidth: 1.2 }));
+  return g;
+});
+const pen = { x: 0, y: 0, on: false };
+
+/* ---------------- measure + index ---------------- */
+E.forEach(e => {
+  if (e.kind === "rough") {
+    const fill = e.ro.fill;
+    e.vars.forEach(v => v.paths.forEach(P => {
+      P.len = P.el.getTotalLength ? P.el.getTotalLength() : 0;
+      const fa = P.el.getAttribute("fill");
+      P.solid = !!fa && fa !== "none";
+      P.fill = P.solid || (!!fill && P.el.getAttribute("stroke") === fill && e.ro.stroke !== fill);
+    }));
+    e.hasFill = e.vars[0].paths.some(P => P.fill);
+  } else if (e.kind === "hl") e.len = e.el.getTotalLength();
+});
+const byScene = SC.map(() => []);
+E.forEach(e => byScene[e.s].push(e));
+E.forEach(e => { if (e.root) e.root.style.display = "none"; e.vis = false; });
+document.getElementById("loading").remove();
+
+/* ---------------- render: everything is a pure function of time ---------------- */
+function progress(e, t) { return e.d > 0 ? clamp((t - e.t0) / e.d) : (t >= e.t0 ? 1 : 0); }
+function dash(el, len, q) {
+  if (q >= 1) { el.style.strokeDasharray = ""; el.style.strokeDashoffset = ""; }
+  else { el.style.strokeDasharray = `${len} ${len}`; el.style.strokeDashoffset = len * (1 - q); }
+}
+function update(e, t, bf) {
+  const p = progress(e, t);
+  if (e.kind === "custom") { e.fn(p, t - e.t0); return; }
+  const vis = p > 0;
+  if (vis !== e.vis) { e.root.style.display = vis ? "" : "none"; e.vis = vis; }
+  if (!vis) return;
+  if (e.kind === "rough") {
+    const v = REDUCED ? 0 : bf % 3;
+    if (v !== e.lv) { e.vars.forEach((vr, k) => vr.g.style.display = k === v ? "" : "none"); e.lv = v; }
+    const vr = e.vars[v];
+    if (vr.last === p) return; vr.last = p;
+    for (const P of vr.paths) {
+      const q = P.fill ? clamp((p - .45) / .55) : clamp(p / (e.hasFill ? .6 : 1));
+      if (P.solid) P.el.style.opacity = q; else dash(P.el, P.len, q);
+    }
+  } else if (e.kind === "text") {
+    const w = p >= 1 ? e.bb.width + 400 : (e.bb.width + 16) * p;
+    if (w !== e.lw) { e.clip.setAttribute("width", w); e.lw = w; }
+    const k = REDUCED ? 0 : bf % 3;
+    if (k !== e.lk) {
+      e.lk = k;
+      const dx = (rnd(e.id * 13 + k) - .5) * 1.6, dy = (rnd(e.id * 17 + k) - .5) * 1.6, a = (rnd(e.id * 7 + k) - .5) * 1.1;
+      e.el.setAttribute("transform", `translate(${dx} ${dy}) rotate(${e.rot + a} ${e.x} ${e.y})`);
+    }
+  } else if (e.kind === "hl") {
+    if (e.lp !== p) { dash(e.el, e.len, p); e.lp = p; }
+  }
+}
+function tipOf(e, t) {
+  const p = progress(e, t);
+  if (e.kind === "text") return { x: e.bb.x + e.bb.width * p + e.ox, y: e.y - e.size * .28 + e.oy };
+  const vr = e.vars[e.lv || 0], P = vr.paths.find(P => !P.fill);
+  if (!P || !P.len) return null;
+  const q = clamp(p / (e.hasFill ? .6 : 1));
+  if (q >= 1) return null;
+  const pt = P.el.getPointAtLength(q * P.len);
+  return { x: pt.x + e.ox, y: pt.y + e.oy };
+}
+function sceneAt(t) { let i = 0; while (i < SC.length - 1 && t >= SC[i + 1].start) i++; return i; }
+
+let lastCur = -1;
+function render(t, bf) {
+  const cur = sceneAt(t);
+  const list = cur !== lastCur ? E : [].concat(byScene[cur - 1] || [], byScene[cur], byScene[cur + 1] || []);
+  lastCur = cur;
+  for (const e of list) update(e, t, bf);
+
+  /* camera */
+  const F = j => ({ x: SC[j].pos.x + 640, y: SC[j].pos.y + 360 });
+  const k = (t - SC[cur].start) / PAN;
+  let cx, cy, z = 1;
+  if (cur > 0 && k < 1) {
+    const a = F(cur - 1), b = F(cur), e = ease(clamp(k));
+    cx = a.x + (b.x - a.x) * e; cy = a.y + (b.y - a.y) * e; z = 1 + ZOOM * Math.sin(Math.PI * clamp(k));
+  } else ({ x: cx, y: cy } = F(cur));
+  svg.setAttribute("viewBox", `${cx - 640 * z} ${cy - 360 * z} ${1280 * z} ${720 * z}`);
+
+  /* pencil follows whatever is being drawn right now */
+  let best = null;
+  for (const e of byScene[cur]) {
+    if (e.kind === "custom" || e.kind === "hl" || !e.pen) continue;
+    const p = progress(e, t);
+    if (p > 0 && p < 1 && (!best || e.t0 > best.t0)) best = e;
+  }
+  const tip = best && tipOf(best, t);
+  if (tip) {
+    const far = !pen.on || Math.hypot(tip.x - pen.x, tip.y - pen.y) > 400;
+    pen.x = far ? tip.x : pen.x + (tip.x - pen.x) * .55; pen.y = far ? tip.y : pen.y + (tip.y - pen.y) * .55;
+    penG.setAttribute("transform", `translate(${pen.x},${pen.y}) rotate(-38)`);
+    pencilVars.forEach((g, j) => g.style.display = j === (REDUCED ? 0 : bf % 3) ? "" : "none");
+  }
+  if (!!tip !== pen.on) { pen.on = !!tip; penG.setAttribute("opacity", tip ? 1 : 0); }
+
+  lbl.textContent = `${TIERS[cur]} · ${cur}/${SC.length - 1}`;
+}
+
+/* ---------------- playback ---------------- */
+const lbl = document.getElementById("lbl"), bPlay = document.getElementById("bPlay"), ctl = document.getElementById("ctl");
+let t = 0, bt = 0, playing = true, exporting = false, last = performance.now();
+function loop(now) {
+  const dt = Math.min(.1, (now - last) / 1000); last = now;
+  if (!exporting) {
+    bt += dt;
+    if (playing) t = Math.min(TOTAL, t + dt);
+    render(t, Math.floor(bt * BOIL_FPS));
+  }
+  requestAnimationFrame(loop);
+}
+function setPlaying(p) { playing = p; bPlay.textContent = p ? "pause" : "play"; bPlay.setAttribute("aria-label", p ? "Pause" : "Play"); }
+function jump(i) { i = clamp(i, 0, SC.length - 1); t = i === 0 ? 0 : SC[i].start; lastCur = -1; setPlaying(true); }
+const curScene = () => sceneAt(t);
+document.getElementById("bPrev").onclick = () => jump(t - SC[curScene()].start > 2 ? curScene() : curScene() - 1);
+document.getElementById("bNext").onclick = () => jump(curScene() + 1);
+bPlay.onclick = () => { if (t >= TOTAL) jump(0); else setPlaying(!playing); };
+document.getElementById("bRestart").onclick = () => jump(0);
+function full() { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}); } catch (_) {} }
+document.getElementById("bFull").onclick = full;
+addEventListener("keydown", e => {
+  if (e.key === " " || e.key === "k") { e.preventDefault(); bPlay.onclick(); }
+  else if (e.key === "ArrowRight" || e.key === "PageDown") document.getElementById("bNext").onclick();
+  else if (e.key === "ArrowLeft" || e.key === "PageUp") document.getElementById("bPrev").onclick();
+  else if (e.key === "r" || e.key === "R" || e.key === "Home") jump(0);
+  else if (e.key === "f" || e.key === "F") full();
+  poke();
+});
+let idleT;
+function poke() { ctl.classList.remove("idle"); clearTimeout(idleT); idleT = setTimeout(() => ctl.classList.add("idle"), 2600); }
+addEventListener("pointermove", poke); ctl.addEventListener("focusin", poke); poke();
+
+/* frame-exact seeking, used to export a video */
+window.reel = { total: TOTAL, starts: SC.map(s => s.start), seek(tt) { exporting = true; ctl.style.display = "none"; render(tt, Math.floor(tt * BOIL_FPS)); } };
+requestAnimationFrame(n => { last = n; requestAnimationFrame(loop); });
+})();
+</script>
