@@ -639,9 +639,13 @@ function loop(now) {
 function setPlaying(p) { playing = p; bPlay.textContent = p ? "pause" : "play"; bPlay.setAttribute("aria-label", p ? "Pause" : "Play"); }
 function jump(i, back) {
   i = clamp(i, 0, SC.length - 1);
-  /* going back: skip the scene's fly-in and glide the camera there instead */
-  if (back && i > 0) { t = SC[i].start + PAN; if (lastCam) camFx = { ...lastCam, at: bt }; }
-  else t = i === 0 ? 0 : SC[i].start;
+  if (back) {
+    /* going back: show that scene already finished, and wait there for the presenter */
+    t = SC[i].start + SC[i].dur - HOLD + .01;
+    if (lastCam) camFx = { ...lastCam, at: bt };
+    lastCur = -1; setPlaying(false); return;
+  }
+  t = i === 0 ? 0 : SC[i].start;
   lastCur = -1; setPlaying(true);
 }
 const curScene = () => sceneAt(t);
