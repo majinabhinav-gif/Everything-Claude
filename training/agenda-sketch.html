@@ -582,7 +582,7 @@ function tipOf(e, t) {
 }
 function sceneAt(t) { let i = 0; while (i < SC.length - 1 && t >= SC[i + 1].start) i++; return i; }
 
-let lastCur = -1;
+let lastCur = -1, camFx = null, lastCam = null;
 function render(t, bf) {
   const cur = sceneAt(t);
   const list = cur !== lastCur ? E : [].concat(byScene[cur - 1] || [], byScene[cur], byScene[cur + 1] || []);
@@ -597,6 +597,12 @@ function render(t, bf) {
     const a = F(cur - 1), b = F(cur), e = ease(clamp(k));
     cx = a.x + (b.x - a.x) * e; cy = a.y + (b.y - a.y) * e; z = 1 + ZOOM * Math.sin(Math.PI * clamp(k));
   } else ({ x: cx, y: cy } = F(cur));
+  if (camFx) {
+    const k2 = (bt - camFx.at) / .8;
+    if (k2 >= 1) camFx = null;
+    else { const e = ease(clamp(k2)); cx = camFx.cx + (cx - camFx.cx) * e; cy = camFx.cy + (cy - camFx.cy) * e; z = camFx.z + (z - camFx.z) * e + ZOOM * .6 * Math.sin(Math.PI * k2); }
+  }
+  lastCam = { cx, cy, z };
   svg.setAttribute("viewBox", `${cx - 640 * z} ${cy - 360 * z} ${1280 * z} ${720 * z}`);
 
   /* pencil follows whatever is being drawn right now */
@@ -631,9 +637,15 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 function setPlaying(p) { playing = p; bPlay.textContent = p ? "pause" : "play"; bPlay.setAttribute("aria-label", p ? "Pause" : "Play"); }
-function jump(i) { i = clamp(i, 0, SC.length - 1); t = i === 0 ? 0 : SC[i].start; lastCur = -1; setPlaying(true); }
+function jump(i, back) {
+  i = clamp(i, 0, SC.length - 1);
+  /* going back: skip the scene's fly-in and glide the camera there instead */
+  if (back && i > 0) { t = SC[i].start + PAN; if (lastCam) camFx = { ...lastCam, at: bt }; }
+  else t = i === 0 ? 0 : SC[i].start;
+  lastCur = -1; setPlaying(true);
+}
 const curScene = () => sceneAt(t);
-document.getElementById("bPrev").onclick = () => jump(t - SC[curScene()].start > 2 ? curScene() : curScene() - 1);
+document.getElementById("bPrev").onclick = () => jump(curScene() - 1, true);
 document.getElementById("bNext").onclick = () => jump(curScene() + 1);
 bPlay.onclick = () => { if (t >= TOTAL) jump(0); else setPlaying(!playing); };
 document.getElementById("bRestart").onclick = () => jump(0);
